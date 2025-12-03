@@ -8,6 +8,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth';
+import botAuthRoutes from './routes/bot-auth';
 import userRoutes from './routes/user';
 import paymentRoutes from './routes/payment';
 import promoRoutes from './routes/promo';
@@ -181,6 +182,9 @@ app.get('/health', (req, res) => {
 
 // Auth routes with strict rate limiting
 app.use('/auth', authLimiter, authRoutes);
+
+// Bot authentication routes (Telegram deep-link login)
+app.use('/auth/bot', authLimiter, botAuthRoutes);
 
 // User routes
 app.use('/user', userRoutes);
