@@ -33,7 +33,7 @@ TELEGRAM_BOT_TOKEN=8477147639:AAEVS_D_A4avYXPOku78AWiYbiirOgglpbw
 # ===================
 FRONTEND_URL=https://portal.outlivion.space
 PORTAL_URL=https://portal.outlivion.space
-MINIAPP_URL=https://bot.outlivion.space
+MINIAPP_URL=https://app.outlivion.space
 LANDING_URL=https://outlivion.space
 DASHBOARD_URL=https://dashboard.outlivion.space
 
@@ -87,7 +87,7 @@ railway variables set JWT_REFRESH_EXPIRES_IN=7d
 railway variables set TELEGRAM_BOT_TOKEN="8477147639:AAEVS_D_A4avYXPOku78AWiYbiirOgglpbw"
 railway variables set FRONTEND_URL="https://portal.outlivion.space"
 railway variables set PORTAL_URL="https://portal.outlivion.space"
-railway variables set MINIAPP_URL="https://bot.outlivion.space"
+railway variables set MINIAPP_URL="https://app.outlivion.space"
 railway variables set LANDING_URL="https://outlivion.space"
 railway variables set DASHBOARD_URL="https://dashboard.outlivion.space"
 railway variables set LOG_LEVEL=info

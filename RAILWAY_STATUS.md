@@ -32,7 +32,7 @@
 ```
 ✅ DASHBOARD_URL:  https://dashboard.outlivion.space
 ✅ FRONTEND_URL:   https://portal.outlivion.space
-✅ MINIAPP_URL:    https://bot.outlivion.space  ← OUR NEW APP!
+✅ MINIAPP_URL:    https://app.outlivion.space  ← OUR NEW APP!
 ✅ LANDING_URL:    https://outlivion.space
 ✅ PORTAL_URL:     https://portal.outlivion.space
 ```
@@ -113,7 +113,7 @@ curl https://api.outlivion.space/billing/tariffs
 ## 📊 INTEGRATION STATUS:
 
 ```
-Frontend:  ✅ DEPLOYED (bot.outlivion.space)
+Frontend:  ✅ DEPLOYED (app.outlivion.space)
 Backend:   ⏳ Ready to deploy (2 vars + railway up)
 Database:  ✅ Neon PostgreSQL configured
 Domain:    ✅ api.outlivion.space ready
