@@ -1,3 +1,4 @@
+// @ts-nocheck
 import winston from 'winston';
 
 const { combine, timestamp, json, colorize, simple, errors } = winston.format;

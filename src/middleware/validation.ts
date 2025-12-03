@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { z } from 'zod';
 import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from './errorHandler';

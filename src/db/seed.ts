@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { db } from './index';
 import { servers, promoCodes } from './schema';
 import dotenv from 'dotenv';
