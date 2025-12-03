@@ -1,9 +1,12 @@
 // @ts-nocheck
+// Load environment variables FIRST before any imports
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import paymentRoutes from './routes/payment';
@@ -12,9 +15,6 @@ import serverRoutes from './routes/servers';
 import { startSubscriptionChecker } from './cron/subscriptions';
 import logger from './utils/logger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
-
-// Load environment variables first
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
