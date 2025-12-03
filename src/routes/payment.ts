@@ -29,6 +29,89 @@ const PLAN_DURATIONS: Record<string, number> = {
   '365days': 365 * 24 * 60 * 60 * 1000,
 };
 
+// Tariff metadata
+const TARIFF_INFO = [
+  {
+    id: '30days',
+    name: 'Базовый',
+    duration: 30,
+    price: 100,
+    pricePerMonth: 100,
+    discount: 0,
+    features: [
+      'Безлимитный трафик',
+      'Высокая скорость',
+      'До 3 устройств одновременно',
+      'Доступ ко всем серверам',
+    ],
+    popular: true,
+  },
+  {
+    id: '90days',
+    name: 'Выгодный',
+    duration: 90,
+    price: 270,
+    pricePerMonth: 90,
+    discount: 10,
+    features: [
+      'Безлимитный трафик',
+      'Высокая скорость',
+      'До 3 устройств одновременно',
+      'Доступ ко всем серверам',
+      'Скидка 10%',
+    ],
+    popular: false,
+  },
+  {
+    id: '180days',
+    name: 'Оптимальный',
+    duration: 180,
+    price: 480,
+    pricePerMonth: 80,
+    discount: 20,
+    features: [
+      'Безлимитный трафик',
+      'Высокая скорость',
+      'До 3 устройств одновременно',
+      'Доступ ко всем серверам',
+      'Скидка 20%',
+      'Приоритетная поддержка',
+    ],
+    popular: false,
+  },
+  {
+    id: '365days',
+    name: 'Максимальный',
+    duration: 365,
+    price: 850,
+    pricePerMonth: 70,
+    discount: 30,
+    features: [
+      'Безлимитный трафик',
+      'Высокая скорость',
+      'До 3 устройств одновременно',
+      'Доступ ко всем серверам',
+      'Скидка 30%',
+      'Приоритетная поддержка',
+      'Ранний доступ к новым функциям',
+    ],
+    popular: false,
+  },
+];
+
+/**
+ * GET /billing/tariffs
+ * Returns available tariff plans
+ */
+router.get('/tariffs', asyncHandler(async (req, res) => {
+  res.json({
+    tariffs: TARIFF_INFO,
+    currency: 'RUB',
+    defaultDevices: 1,
+    maxDevices: 10,
+  });
+}));
+
 /**
  * POST /billing/create
  * Creates payment link via Mercuryo

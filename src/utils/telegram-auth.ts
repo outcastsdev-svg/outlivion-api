@@ -154,3 +154,88 @@ export function validateTelegramAuthData(data: unknown): data is TelegramAuthDat
     typeof obj.hash === 'string'
   );
 }
+
+/**
+ * Parse Telegram Mini App initData
+ * Format: "query_id=...&user={...}&auth_date=...&hash=..."
+ */
+export function parseTelegramInitData(initData: string): TelegramAuthData | null {
+  try {
+    const params = new URLSearchParams(initData);
+    
+    const hash = params.get('hash');
+    const authDate = params.get('auth_date');
+    const userParam = params.get('user');
+    
+    if (!hash || !authDate || !userParam) {
+      console.error('[AUTH] Missing required parameters in initData');
+      return null;
+    }
+    
+    // Parse user JSON
+    const user = JSON.parse(userParam);
+    
+    return {
+      id: String(user.id),
+      first_name: user.first_name,
+      last_name: user.last_name,
+      username: user.username,
+      photo_url: user.photo_url,
+      auth_date: authDate,
+      hash,
+    };
+  } catch (error) {
+    console.error('[AUTH] Failed to parse initData:', error);
+    return null;
+  }
+}
+
+/**
+ * Verify Telegram Mini App initData signature
+ */
+export function verifyTelegramInitData(initData: string, botToken: string): boolean {
+  try {
+    const params = new URLSearchParams(initData);
+    const hash = params.get('hash');
+    
+    if (!hash) {
+      return false;
+    }
+    
+    // Remove hash from params
+    params.delete('hash');
+    
+    // Sort params and create data-check-string
+    const dataCheckArray: string[] = [];
+    params.forEach((value, key) => {
+      dataCheckArray.push(`${key}=${value}`);
+    });
+    dataCheckArray.sort();
+    const dataCheckString = dataCheckArray.join('\n');
+    
+    // Create secret key (SHA256 of "WebAppData" + bot token)
+    const secretKey = crypto
+      .createHmac('sha256', 'WebAppData')
+      .update(botToken)
+      .digest();
+    
+    // Calculate HMAC-SHA256
+    const calculatedHash = crypto
+      .createHmac('sha256', secretKey)
+      .update(dataCheckString)
+      .digest('hex');
+    
+    // Timing-safe comparison
+    const hashBuffer = Buffer.from(hash, 'hex');
+    const calculatedBuffer = Buffer.from(calculatedHash, 'hex');
+    
+    if (hashBuffer.length !== calculatedBuffer.length) {
+      return false;
+    }
+    
+    return crypto.timingSafeEqual(hashBuffer, calculatedBuffer);
+  } catch (error) {
+    console.error('[AUTH] Failed to verify initData:', error);
+    return false;
+  }
+}

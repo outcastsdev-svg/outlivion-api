@@ -3,7 +3,13 @@ import { Router } from 'express';
 import { db } from '../db';
 import { users } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import { verifyTelegramAuth, extractTelegramUser, validateTelegramAuthData } from '../utils/telegram-auth';
+import { 
+  verifyTelegramAuth, 
+  extractTelegramUser, 
+  validateTelegramAuthData,
+  parseTelegramInitData,
+  verifyTelegramInitData 
+} from '../utils/telegram-auth';
 import { createTokenPair } from '../utils/jwt';
 import { validateBody, telegramAuthSchema, TelegramAuthInput } from '../middleware/validation';
 import { asyncHandler } from '../middleware/errorHandler';
@@ -15,9 +21,8 @@ const router = Router();
  * POST /auth/telegram
  * Авторизация через Telegram Login Widget
  */
-router.post('/telegram', validateBody(telegramAuthSchema), asyncHandler(async (req, res) => {
-  const telegramData = req.body as TelegramAuthInput;
-  const { referralId } = telegramData;
+router.post('/telegram', asyncHandler(async (req, res) => {
+  const { initData, referralId, ...widgetData } = req.body;
 
   // Check bot token configuration
   if (!process.env.TELEGRAM_BOT_TOKEN) {
@@ -28,27 +33,69 @@ router.post('/telegram', validateBody(telegramAuthSchema), asyncHandler(async (r
     });
   }
 
-  // Validate Telegram auth data structure
-  if (!validateTelegramAuthData(telegramData)) {
-    logAuth('Invalid auth data structure', { telegramId: 'unknown' });
-    return res.status(400).json({ 
-      error: 'Invalid authentication data format',
-      code: 'INVALID_FORMAT',
-    });
-  }
+  let telegramData;
+  let authSource: 'widget' | 'miniapp' = 'widget';
 
-  // Verify Telegram signature
-  const isValid = verifyTelegramAuth(telegramData, process.env.TELEGRAM_BOT_TOKEN);
-  
-  if (!isValid) {
-    logAuth('Invalid Telegram signature', { 
-      telegramId: telegramData.id,
-      authDate: telegramData.auth_date,
-    });
-    return res.status(401).json({ 
-      error: 'Invalid Telegram authentication data',
-      code: 'INVALID_SIGNATURE',
-    });
+  // Determine auth type and validate
+  if (initData && typeof initData === 'string') {
+    // Telegram Mini App: initData string
+    authSource = 'miniapp';
+    
+    // Parse initData
+    telegramData = parseTelegramInitData(initData);
+    
+    if (!telegramData) {
+      logAuth('Failed to parse initData', { authSource });
+      return res.status(400).json({ 
+        error: 'Invalid initData format',
+        code: 'INVALID_INITDATA',
+      });
+    }
+    
+    // Verify initData signature
+    const isValid = verifyTelegramInitData(initData, process.env.TELEGRAM_BOT_TOKEN);
+    
+    if (!isValid) {
+      logAuth('Invalid initData signature', { 
+        telegramId: telegramData.id,
+        authSource,
+      });
+      return res.status(401).json({ 
+        error: 'Invalid Telegram authentication data',
+        code: 'INVALID_SIGNATURE',
+      });
+    }
+    
+    logAuth('Mini App auth validated', { telegramId: telegramData.id });
+  } else {
+    // Telegram Login Widget: widget data object
+    telegramData = widgetData as any;
+    
+    // Validate Widget data structure
+    if (!validateTelegramAuthData(telegramData)) {
+      logAuth('Invalid auth data structure', { telegramId: 'unknown', authSource });
+      return res.status(400).json({ 
+        error: 'Invalid authentication data format',
+        code: 'INVALID_FORMAT',
+      });
+    }
+
+    // Verify Widget signature
+    const isValid = verifyTelegramAuth(telegramData, process.env.TELEGRAM_BOT_TOKEN);
+    
+    if (!isValid) {
+      logAuth('Invalid Telegram signature', { 
+        telegramId: telegramData.id,
+        authDate: telegramData.auth_date,
+        authSource,
+      });
+      return res.status(401).json({ 
+        error: 'Invalid Telegram authentication data',
+        code: 'INVALID_SIGNATURE',
+      });
+    }
+    
+    logAuth('Widget auth validated', { telegramId: telegramData.id });
   }
 
   // Extract user data
