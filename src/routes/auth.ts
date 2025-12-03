@@ -36,6 +36,9 @@ router.post('/telegram', asyncHandler(async (req, res) => {
   let telegramData;
   let authSource: 'widget' | 'miniapp' = 'widget';
 
+  // Check if request is from bot (special marker)
+  const isBotRequest = widgetData.hash === 'bot-created-user';
+  
   // Determine auth type and validate
   if (initData && typeof initData === 'string') {
     // Telegram Mini App: initData string
@@ -67,6 +70,18 @@ router.post('/telegram', asyncHandler(async (req, res) => {
     }
     
     logAuth('Mini App auth validated', { telegramId: telegramData.id });
+  } else if (isBotRequest) {
+    // Telegram Bot: special marker for bot-created users
+    authSource = 'widget'; // Keep as widget for compatibility
+    telegramData = widgetData as any;
+    
+    logAuth('Bot user creation request', { 
+      telegramId: widgetData.id,
+      firstName: widgetData.first_name,
+    });
+    
+    // Skip signature validation for bot requests
+    // Bot creates users with minimal data and special marker
   } else {
     // Telegram Login Widget: widget data object
     telegramData = widgetData as any;

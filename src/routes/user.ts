@@ -42,9 +42,44 @@ router.get('/', asyncHandler(async (req: any, res) => {
 /**
  * GET /user/subscription
  * Получает текущую подписку пользователя
+ * 
+ * Поддерживает два режима:
+ * 1. С авторизацией (через middleware) - для обычных запросов
+ * 2. По telegramId (query param) - для запросов от бота (без авторизации)
  */
 router.get('/subscription', asyncHandler(async (req: any, res) => {
-  const userId = req.user.userId;
+  let userId: string | undefined;
+  
+  // Проверяем запрос от бота (query param telegramId)
+  const telegramId = req.query.telegramId as string | undefined;
+  
+  if (telegramId) {
+    // Запрос от бота - находим пользователя по Telegram ID
+    logger.info('Bot subscription request', { telegramId });
+    
+    const user = await db.query.users.findFirst({
+      where: eq(users.telegramId, telegramId),
+    });
+    
+    if (!user) {
+      return res.status(404).json({ 
+        error: 'User not found',
+        code: 'USER_NOT_FOUND',
+      });
+    }
+    
+    userId = user.id;
+  } else {
+    // Обычный запрос - требуется авторизация
+    if (!req.user || !req.user.userId) {
+      return res.status(401).json({ 
+        error: 'Unauthorized',
+        code: 'UNAUTHORIZED',
+      });
+    }
+    
+    userId = req.user.userId;
+  }
 
   const subscription = await db.query.subscriptions.findFirst({
     where: eq(subscriptions.userId, userId),
