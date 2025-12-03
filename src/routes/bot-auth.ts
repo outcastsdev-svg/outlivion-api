@@ -11,6 +11,12 @@ import { eq, and, gt } from 'drizzle-orm';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import logger from '../utils/logger';
 import crypto from 'crypto';
+import { 
+  createTokenLimiter, 
+  checkLoginLimiter, 
+  confirmLoginLimiter,
+  cleanupLimiter 
+} from '../middleware/bot-auth-limiter';
 
 const router = Router();
 
@@ -37,7 +43,7 @@ const checkLoginSchema = z.object({
  * POST /auth/bot/create-login-token
  * Creates a new login session and returns bot deep-link URL
  */
-router.post('/create-login-token', async (req, res) => {
+router.post('/create-login-token', createTokenLimiter, async (req, res) => {
   try {
     const body = createLoginTokenSchema.parse(req.body);
 
@@ -82,7 +88,7 @@ router.post('/create-login-token', async (req, res) => {
  * POST /auth/bot/confirm-login
  * Called by Telegram bot when user clicks /start login_<TOKEN>
  */
-router.post('/confirm-login', async (req, res) => {
+router.post('/confirm-login', confirmLoginLimiter, async (req, res) => {
   try {
     const body = confirmLoginSchema.parse(req.body);
     const { token, telegramId, username, firstName, lastName, photoUrl } = body;
@@ -184,8 +190,9 @@ router.post('/confirm-login', async (req, res) => {
 /**
  * GET /auth/bot/check-login?token=<TOKEN>
  * Frontend polls this endpoint to check login status
+ * NOTE: This endpoint is called frequently (polling), so it has separate rate limiting
  */
-router.get('/check-login', async (req, res) => {
+router.get('/check-login', checkLoginLimiter, async (req, res) => {
   try {
     const { token } = checkLoginSchema.parse(req.query);
 
@@ -289,7 +296,7 @@ router.get('/check-login', async (req, res) => {
  * DELETE /auth/bot/cleanup-expired
  * Cleanup expired login sessions (can be called by cron)
  */
-router.delete('/cleanup-expired', async (req, res) => {
+router.delete('/cleanup-expired', cleanupLimiter, async (req, res) => {
   try {
     const result = await db
       .delete(loginSessions)
