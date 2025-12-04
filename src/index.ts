@@ -8,11 +8,13 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth';
+import botAuthRoutes from './routes/bot-auth';
 import userRoutes from './routes/user';
 import paymentRoutes from './routes/payment';
 import promoRoutes from './routes/promo';
 import serverRoutes from './routes/servers';
 import { startSubscriptionChecker } from './cron/subscriptions';
+import { startLoginSessionsCleanup } from './cron/cleanup-login-sessions';
 import logger from './utils/logger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
@@ -53,11 +55,18 @@ app.use(helmet({
 // CORS configuration
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  process.env.MINIAPP_URL,
+  process.env.DASHBOARD_URL,
+  process.env.LANDING_URL,
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:3002', // MiniApp
   'http://127.0.0.1:3002', // MiniApp
-  'https://heel-subscribers-originally-jesse.trycloudflare.com', // MiniApp public URL
+  'http://localhost:3003', // Landing
+  'http://localhost:3004', // Dashboard
+  'https://app.outlivion.space',
+  'https://dashboard.outlivion.space',
+  'https://outlivion.space',
 ].filter(Boolean) as string[];
 
 app.use(cors({
@@ -182,6 +191,9 @@ app.get('/health', (req, res) => {
 // Auth routes with strict rate limiting
 app.use('/auth', authLimiter, authRoutes);
 
+// Bot authentication routes (Telegram deep-link login)
+app.use('/auth/bot', authLimiter, botAuthRoutes);
+
 // User routes
 app.use('/user', userRoutes);
 
@@ -222,7 +234,8 @@ if (!isVercel) {
     
     // Start cron jobs (only in non-serverless environment)
     startSubscriptionChecker();
-    logger.info('Cron jobs initialized');
+    startLoginSessionsCleanup();
+    logger.info('Cron jobs initialized (subscriptions + login sessions cleanup)');
   });
 
   // Graceful shutdown

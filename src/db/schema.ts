@@ -116,6 +116,21 @@ export const userPromoCodes = pgTable('user_promo_codes', {
   userIdPromoIdx: index('user_promo_idx').on(table.userId, table.promoCodeId),
 }));
 
+// Login sessions for Telegram Bot deep-link authentication
+export const loginSessions = pgTable('login_sessions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  token: varchar('token', { length: 255 }).notNull().unique(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // 'pending', 'approved', 'expired'
+  telegramId: varchar('telegram_id', { length: 255 }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  tokenIdx: index('login_sessions_token_idx').on(table.token),
+  statusIdx: index('login_sessions_status_idx').on(table.status),
+  expiresAtIdx: index('login_sessions_expires_at_idx').on(table.expiresAt),
+}));
+
 // Logs table
 export const logs = pgTable('logs', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -190,6 +205,13 @@ export const userPromoCodesRelations = relations(userPromoCodes, ({ one }) => ({
   payment: one(payments, {
     fields: [userPromoCodes.paymentId],
     references: [payments.id],
+  }),
+}));
+
+export const loginSessionsRelations = relations(loginSessions, ({ one }) => ({
+  user: one(users, {
+    fields: [loginSessions.userId],
+    references: [users.id],
   }),
 }));
 
